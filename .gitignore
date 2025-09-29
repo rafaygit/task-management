@@ -44,3 +44,11 @@ Thumbs.db
 .github/instructions/nx.instructions.md
 
 .angular
+
+# Environment variables
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+apps/api/.env
