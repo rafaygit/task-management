@@ -36,7 +36,7 @@ export class AuthController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateAuthDto: any) {
+  update(@Param('id') id: string, @Body() updateAuthDto: unknown) {
     return this.authService.update(+id, updateAuthDto);
   }
 

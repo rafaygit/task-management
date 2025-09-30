@@ -1,38 +1,44 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req } from '@nestjs/common';
 import { AuditLogService } from './audit-log.service';
 import { CreateAuditLogDto } from './dto/create-audit-log.dto';
 import { UpdateAuditLogDto } from './dto/update-audit-log.dto';
-import { AuthGuard } from '@nestjs/passport';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard, Roles } from '@task-app/auth/backend';
+import { RoleType } from '@task-app/data';
+import { AuthenticatedUser } from '../auth/interfaces/user.interface';
 
-@UseGuards(AuthGuard('jwt'), RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('audit-log')
 export class AuditLogController {
   constructor(private readonly auditLogService: AuditLogService) {}
 
   @Post()
-  create(@Body() createAuditLogDto: CreateAuditLogDto) {
+  @Roles(RoleType.OWNER, RoleType.ADMIN)
+  create(@Req() req: { user: AuthenticatedUser }, @Body() createAuditLogDto: CreateAuditLogDto) {
     return this.auditLogService.create(createAuditLogDto);
   }
 
   @Get()
-  @Roles('Owner', 'Admin')
-  findAll() {
+  @Roles(RoleType.OWNER, RoleType.ADMIN, RoleType.VIEWER)
+  findAll(@Req() req: { user: AuthenticatedUser }) {
     return this.auditLogService.getAllLogs();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  @Roles(RoleType.OWNER, RoleType.ADMIN, RoleType.VIEWER)
+  findOne(@Req() req: { user: AuthenticatedUser }, @Param('id') id: string) {
     return this.auditLogService.findOne(+id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateAuditLogDto: UpdateAuditLogDto) {
+  @Roles(RoleType.OWNER, RoleType.ADMIN)
+  update(@Req() req: { user: AuthenticatedUser }, @Param('id') id: string, @Body() updateAuditLogDto: UpdateAuditLogDto) {
     return this.auditLogService.update(+id, updateAuditLogDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  @Roles(RoleType.OWNER)
+  remove(@Req() req: { user: AuthenticatedUser }, @Param('id') id: string) {
     return this.auditLogService.remove(+id);
   }
 }

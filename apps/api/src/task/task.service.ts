@@ -7,6 +7,7 @@ import { UpdateTaskDto } from './dto/update-task.dto';
 import { User } from '../user/entities/user.entity';
 import { Organization } from '../organization/entities/organization.entity';
 import { AuditLogService } from '../audit-log/audit-log.service';
+import { AuthenticatedUser } from '../auth/interfaces/user.interface';
 
 @Injectable()
 export class TaskService {
@@ -17,7 +18,7 @@ export class TaskService {
     private readonly auditLogService: AuditLogService,
   ) {}
 
-  private async getAccessibleOrgIdsForUser(user: any): Promise<Set<number>> {
+  private async getAccessibleOrgIdsForUser(user: AuthenticatedUser): Promise<Set<number>> {
     const children = await this.orgRepo.find({ where: { parent: { id: user.orgId } } });
     return new Set<number>([user.orgId, ...children.map((c) => c.id)]);
   }
@@ -44,7 +45,7 @@ export class TaskService {
     };
   }
 
-  async createTask(createTaskDto: CreateTaskDto, user: any) {
+  async createTask(createTaskDto: CreateTaskDto, user: AuthenticatedUser) {
     const { assignedToId, organizationId, title, description, completed } = createTaskDto;
 
     if (!title || !organizationId) throw new BadRequestException('title and organizationId are required');
@@ -88,7 +89,7 @@ export class TaskService {
     return result;
   }
 
-  async updateTask(id: number, dto: UpdateTaskDto, user: any) {
+  async updateTask(id: number, dto: UpdateTaskDto, user: AuthenticatedUser) {
     const existing = await this.taskRepo.findOne({ where: { id }, relations: ['organization', 'assignedTo', 'assignedTo.organization'] });
     if (!existing) throw new NotFoundException('Task not found');
 
@@ -103,16 +104,16 @@ export class TaskService {
       if (!accessibleOrgIds.has(newAssignee.organization.id)) {
         throw new ForbiddenException('Assigned user outside your organization scope');
       }
-      (existing as any).assignedTo = newAssignee;
+      existing.assignedTo = newAssignee;
     }
 
-    if (dto.title !== undefined) (existing as any).title = dto.title;
-    if (dto.description !== undefined) (existing as any).description = dto.description;
-    if (dto.completed !== undefined) (existing as any).completed = dto.completed;
+    if (dto.title !== undefined) existing.title = dto.title;
+    if (dto.description !== undefined) existing.description = dto.description;
+    if (dto.completed !== undefined) existing.completed = dto.completed;
     if (dto.organizationId !== undefined) {
       const newOrg = await this.orgRepo.findOne({ where: { id: dto.organizationId } });
       if (!newOrg) throw new NotFoundException('Organization not found');
-      (existing as any).organization = newOrg;
+      existing.organization = newOrg;
     }
 
     const saved = await this.taskRepo.save(existing);
@@ -120,7 +121,7 @@ export class TaskService {
     return this.mapTaskResponse(saved);
   }
 
-  async deleteTask(id: number, user: any) {
+  async deleteTask(id: number, user: AuthenticatedUser) {
     const taskToDelete = await this.taskRepo.findOne({ where: { id }, relations: ['assignedTo', 'assignedTo.role', 'organization'] });
     if (!taskToDelete) throw new NotFoundException('Task not found');
     await this.taskRepo.delete(id);
@@ -128,7 +129,7 @@ export class TaskService {
     return this.mapTaskResponse(taskToDelete);
   }
 
-  async findAccessibleTasks(user: any) {
+  async findAccessibleTasks(user: AuthenticatedUser) {
     let tasks: Task[] = [];
     if (user.role === 'Owner' || user.role === 'Admin') {
       const accessibleOrgIds = await this.getAccessibleOrgIdsForUser(user);

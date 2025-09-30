@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { DataSource } from 'typeorm';
 import { User } from '../user/entities/user.entity';
 import * as bcrypt from 'bcryptjs';
+import { JwtPayload } from './interfaces/user.interface';
 
 @Injectable()
 export class AuthService {
@@ -23,13 +24,13 @@ export class AuthService {
   }
 
   async login(user: User) {
-    const payload = { username: user.username, sub: user.id, role: user.role.name, orgId: user.organization.id };
+    const payload: JwtPayload = { username: user.username, sub: user.id, role: user.role.name, orgId: user.organization.id };
     return {
       access_token: this.jwtService.sign(payload),
     };
   }
 
-  create(createAuthDto: any) {
+  create(createAuthDto: unknown) {
     return 'This action adds a new auth';
   }
 
@@ -41,7 +42,7 @@ export class AuthService {
     return `This action returns a #${id} auth`;
   }
 
-  update(id: number, updateAuthDto: any) {
+  update(id: number, updateAuthDto: unknown) {
     return `This action updates a #${id} auth`;
   }
 

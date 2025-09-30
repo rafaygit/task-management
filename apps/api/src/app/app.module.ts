@@ -15,7 +15,7 @@ import { AuditLogModule } from '../audit-log/audit-log.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: ['../../.env', '.env']
+      envFilePath: ['.env']
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
